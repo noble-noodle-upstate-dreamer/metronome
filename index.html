@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Metronome">
+  <meta name="theme-color" content="#ffffff">
+  <title>Metronome</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+      background: #ffffff;
+      color: #1a1a1a;
+      -webkit-font-smoothing: antialiased;
+      overscroll-behavior: none;
+    }
+    #app {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1.5rem 3rem;
+      min-height: 100vh;
+      gap: 1.5rem;
+    }
+    h1 {
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #888;
+      margin-top: 0.5rem;
+    }
+    #pendulum-area { width: 200px; height: 180px; position: relative; flex-shrink: 0; }
+    #pendulum-svg { width: 100%; height: 100%; overflow: visible; }
+    #bpm-display { text-align: center; line-height: 1; }
+    #bpm-number { font-size: 72px; font-weight: 300; color: #1a1a1a; letter-spacing: -3px; }
+    #bpm-label { font-size: 11px; color: #aaa; letter-spacing: 3px; text-transform: uppercase; margin-top: 4px; }
+    #tempo-name { font-size: 13px; color: #888; margin-top: 8px; min-height: 18px; }
+    #bpm-slider { width: 100%; max-width: 300px; accent-color: #1a1a1a; height: 4px; cursor: pointer; }
+    .btn-row { display: flex; gap: 10px; align-items: center; }
+    .adj-btn {
+      width: 44px; height: 44px; border-radius: 50%;
+      border: 1px solid #ddd; background: #fff;
+      color: #1a1a1a; font-size: 18px; font-weight: 300;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+      transition: background 0.1s;
+    }
+    .adj-btn:active { background: #f0f0f0; transform: scale(0.95); }
+    #play-btn {
+      width: 76px; height: 76px; border-radius: 50%;
+      border: 1.5px solid #1a1a1a; background: #fff;
+      color: #1a1a1a; font-size: 26px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+      transition: background 0.12s, color 0.12s;
+    }
+    #play-btn.playing { background: #1a1a1a; color: #fff; }
+    #play-btn:active { transform: scale(0.95); }
+    .beats-row { display: flex; gap: 10px; align-items: center; }
+    .beat-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: #ddd; transition: background 0.05s, transform 0.05s;
+    }
+    .beat-dot.accent { background: #1a1a1a; }
+    .beat-dot.flash { background: #888; transform: scale(1.5); }
+    .section-label {
+      font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+      color: #bbb; align-self: flex-start;
+    }
+    .beats-control { display: flex; gap: 12px; align-items: center; width: 100%; max-width: 300px; }
+    .beats-control span { font-size: 16px; color: #1a1a1a; flex: 1; text-align: center; font-weight: 400; }
+    .sm-btn {
+      width: 36px; height: 36px; border-radius: 50%;
+      border: 1px solid #ddd; background: #fff;
+      color: #1a1a1a; font-size: 18px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+    }
+    .sm-btn:active { background: #f0f0f0; }
+    #tap-btn {
+      padding: 12px 32px; border-radius: 28px;
+      border: 1px solid #ddd; background: #f7f7f7;
+      color: #888; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
+      cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+    }
+    #tap-btn:active { background: #efefef; transform: scale(0.97); }
+    #subdivide-row { display: flex; gap: 8px; }
+    .sub-btn {
+      padding: 6px 14px; border-radius: 18px;
+      border: 1px solid #e0e0e0; background: #fff;
+      color: #aaa; font-size: 13px;
+      cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+    }
+    .sub-btn.active { border-color: #1a1a1a; color: #1a1a1a; font-weight: 500; }
+    .sub-btn:active { opacity: 0.6; }
+    hr.divider { width: 100%; max-width: 300px; border: none; border-top: 1px solid #f0f0f0; }
+    .controls-block { width: 100%; max-width: 300px; display: flex; flex-direction: column; gap: 12px; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <h1>Metronome</h1>
+
+  <div id="pendulum-area">
+    <svg id="pendulum-svg" viewBox="0 0 200 180">
+      <line x1="100" y1="10" x2="100" y2="160" stroke="#eee" stroke-width="1"/>
+      <g id="pendulum-arm" style="transform-origin: 100px 10px; transform: rotate(0deg);">
+        <line x1="100" y1="10" x2="100" y2="145" stroke="#bbb" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="100" cy="145" r="11" fill="#1a1a1a"/>
+      </g>
+      <circle cx="100" cy="10" r="4" fill="#ddd"/>
+    </svg>
+  </div>
+
+  <div id="bpm-display">
+    <div id="bpm-number">120</div>
+    <div id="bpm-label">BPM</div>
+    <div id="tempo-name">Allegretto</div>
+  </div>
+
+  <input type="range" id="bpm-slider" min="20" max="240" value="120" step="1">
+
+  <div class="btn-row">
+    <button class="adj-btn" id="minus10" aria-label="Minus 10">−10</button>
+    <button class="adj-btn" id="minus1" aria-label="Minus 1">−</button>
+    <button id="play-btn" aria-label="Play/Stop">▶</button>
+    <button class="adj-btn" id="plus1" aria-label="Plus 1">+</button>
+    <button class="adj-btn" id="plus10" aria-label="Plus 10">+10</button>
+  </div>
+
+  <div class="beats-row" id="beats-row"></div>
+
+  <hr class="divider">
+
+  <div class="controls-block">
+    <span class="section-label">Beats per measure</span>
+    <div class="beats-control">
+      <button class="sm-btn" id="beats-down" aria-label="Fewer beats">−</button>
+      <span id="beats-label">4</span>
+      <button class="sm-btn" id="beats-up" aria-label="More beats">+</button>
+    </div>
+
+    <span class="section-label">Subdivision</span>
+    <div id="subdivide-row">
+      <button class="sub-btn active" data-sub="1">♩</button>
+      <button class="sub-btn" data-sub="2">♪♪</button>
+      <button class="sub-btn" data-sub="3">♪♪♪</button>
+      <button class="sub-btn" data-sub="4">♬</button>
+    </div>
+  </div>
+
+  <hr class="divider">
+  <button id="tap-btn">Tap Tempo</button>
+</div>
+
+<script>
+(function(){
+  let bpm=120, beats=4, subdivision=1;
+  let playing=false, beat=0, subBeat=0;
+  let timerId=null, audioCtx=null;
+  let pendulumAngle=0, pendulumDir=1, animId=null, targetAngle=30;
+  let tapTimes=[];
+
+  const tempos=[[0,''],[20,'Larghissimo'],[40,'Largo'],[60,'Larghetto'],[66,'Adagio'],[76,'Andante'],[108,'Moderato'],[120,'Allegretto'],[156,'Allegro'],[176,'Vivace'],[200,'Presto'],[220,'Prestissimo']];
+
+  const bpmEl=document.getElementById('bpm-number');
+  const sliderEl=document.getElementById('bpm-slider');
+  const tempoEl=document.getElementById('tempo-name');
+  const playBtn=document.getElementById('play-btn');
+  const beatsRow=document.getElementById('beats-row');
+  const beatsLabel=document.getElementById('beats-label');
+  const pendulumArm=document.getElementById('pendulum-arm');
+
+  function getTempoName(b){ let n=''; for(let i=0;i<tempos.length;i++) if(b>=tempos[i][0]) n=tempos[i][1]; return n; }
+
+  function updateDisplay(){
+    bpmEl.textContent=bpm; sliderEl.value=bpm;
+    tempoEl.textContent=getTempoName(bpm);
+    renderDots();
+  }
+
+  function renderDots(){
+    beatsRow.innerHTML='';
+    for(let i=0;i<beats;i++){
+      const d=document.createElement('div');
+      d.className='beat-dot'+(i===0?' accent':'');
+      d.id='dot-'+i;
+      beatsRow.appendChild(d);
+    }
+  }
+
+  function flashDot(b){
+    document.querySelectorAll('.beat-dot').forEach((d,i)=>{
+      d.classList.remove('flash','accent');
+      if(i===0) d.classList.add('accent');
+    });
+    const el=document.getElementById('dot-'+b);
+    if(el){ el.classList.add('flash'); setTimeout(()=>el.classList.remove('flash'),80); }
+  }
+
+  function getCtx(){
+    if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    return audioCtx;
+  }
+
+  function click(isAccent, isSub){
+    try{
+      const ctx=getCtx();
+      if(ctx.state==='suspended') ctx.resume();
+      const osc=ctx.createOscillator();
+      const gain=ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type='sine';
+      const t=ctx.currentTime;
+      if(isSub){
+        osc.frequency.setValueAtTime(800,t);
+        gain.gain.setValueAtTime(0.06,t);
+        gain.gain.exponentialRampToValueAtTime(0.0001,t+0.04);
+      } else if(isAccent){
+        osc.frequency.setValueAtTime(1800,t);
+        gain.gain.setValueAtTime(0.5,t);
+        gain.gain.exponentialRampToValueAtTime(0.0001,t+0.08);
+      } else {
+        osc.frequency.setValueAtTime(900,t);
+        gain.gain.setValueAtTime(0.3,t);
+        gain.gain.exponentialRampToValueAtTime(0.0001,t+0.06);
+      }
+      osc.start(t); osc.stop(t+0.1);
+    } catch(e){}
+  }
+
+  function startPendulumAnim(){
+    if(animId) return;
+    function animate(){
+      pendulumAngle+=(targetAngle*pendulumDir-pendulumAngle)*0.08;
+      pendulumArm.style.transform=`rotate(${pendulumAngle}deg)`;
+      animId=requestAnimationFrame(animate);
+    }
+    animate();
+  }
+
+  function stopPendulumAnim(){
+    if(animId){ cancelAnimationFrame(animId); animId=null; }
+    const step=()=>{
+      pendulumAngle*=0.85;
+      pendulumArm.style.transform=`rotate(${pendulumAngle}deg)`;
+      if(Math.abs(pendulumAngle)>0.5) animId=requestAnimationFrame(step);
+      else { pendulumArm.style.transform='rotate(0deg)'; animId=null; }
+    };
+    animId=requestAnimationFrame(step);
+  }
+
+  function tick(){
+    const isMain=subBeat===0;
+    const isAccent=isMain&&beat===0;
+    if(isMain){ flashDot(beat); pendulumDir*=-1; targetAngle=30; }
+    click(isAccent,!isMain);
+    subBeat++; if(subBeat>=subdivision){ subBeat=0; beat=(beat+1)%beats; }
+    timerId=setTimeout(tick,(60000/bpm)/subdivision);
+  }
+
+  function startStop(){
+    if(playing){
+      playing=false; clearTimeout(timerId);
+      playBtn.textContent='▶'; playBtn.classList.remove('playing');
+      stopPendulumAnim();
+    } else {
+      playing=true; beat=0; subBeat=0;
+      playBtn.textContent='■'; playBtn.classList.add('playing');
+      pendulumDir=1; startPendulumAnim(); tick();
+    }
+  }
+
+  sliderEl.addEventListener('input',()=>{ bpm=+sliderEl.value; updateDisplay(); if(playing){ clearTimeout(timerId); tick(); }});
+  document.getElementById('minus1').addEventListener('click',()=>{ bpm=Math.max(20,bpm-1); updateDisplay(); });
+  document.getElementById('plus1').addEventListener('click',()=>{ bpm=Math.min(240,bpm+1); updateDisplay(); });
+  document.getElementById('minus10').addEventListener('click',()=>{ bpm=Math.max(20,bpm-10); updateDisplay(); });
+  document.getElementById('plus10').addEventListener('click',()=>{ bpm=Math.min(240,bpm+10); updateDisplay(); });
+  playBtn.addEventListener('click',startStop);
+  document.getElementById('beats-down').addEventListener('click',()=>{ beats=Math.max(1,beats-1); beatsLabel.textContent=beats; renderDots(); if(playing) beat=beat%beats; });
+  document.getElementById('beats-up').addEventListener('click',()=>{ beats=Math.min(12,beats+1); beatsLabel.textContent=beats; renderDots(); });
+  document.querySelectorAll('.sub-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      subdivision=+btn.dataset.sub;
+      document.querySelectorAll('.sub-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+  document.getElementById('tap-btn').addEventListener('click',()=>{
+    const now=Date.now(); tapTimes.push(now);
+    if(tapTimes.length>8) tapTimes.shift();
+    if(tapTimes.length>=2){
+      let sum=0; for(let i=1;i<tapTimes.length;i++) sum+=tapTimes[i]-tapTimes[i-1];
+      bpm=Math.round(Math.min(240,Math.max(20,60000/(sum/(tapTimes.length-1)))));
+      updateDisplay();
+    }
+    if(now-(tapTimes[0]||0)>3000) tapTimes=[now];
+  });
+
+  updateDisplay();
+})();
+</script>
+</body>
+</html>
