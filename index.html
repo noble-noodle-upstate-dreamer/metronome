@@ -7,10 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Metronome">
   <meta name="theme-color" content="#1a3a6b">
-
-  <!-- Inline SVG icon as base64 data URI — deep blue with white pendulum -->
   <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxODAgMTgwIj48cmVjdCB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgcng9IjM4IiBmaWxsPSIjMWEzYTZiIi8+PGxpbmUgeDE9IjkwIiB5MT0iMzAiIHgyPSI5MCIgeTI9IjE1NSIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjYiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxjaXJjbGUgY3g9IjkwIiBjeT0iMzAiIHI9IjgiIGZpbGw9IiNmZmZmZmYiLz48Y2lyY2xlIGN4PSI5MCIgY3k9IjE1NSIgcj0iMTgiIGZpbGw9IiNmZmZmZmYiLz48bGluZSB4MT0iNjAiIHkxPSIzMCIgeDI9IjEyMCIgeTI9IjMwIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PC9zdmc+">
-
   <title>Metronome</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -26,19 +23,23 @@
       display: flex; flex-direction: column; align-items: center;
       padding: 2rem 1.5rem 3rem; min-height: 100vh; gap: 1.5rem;
     }
-    h1 { font-size: 13px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: #888; margin-top: 0.5rem; }
+    /* h1: was 13px → 16px */
+    h1 { font-size: 16px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: #888; margin-top: 0.5rem; }
     #pendulum-area { width: 200px; height: 180px; position: relative; flex-shrink: 0; }
     #pendulum-svg { width: 100%; height: 100%; overflow: visible; }
     #bpm-display { text-align: center; line-height: 1; }
-    #bpm-number { font-size: 72px; font-weight: 300; color: #1a1a1a; letter-spacing: -3px; }
-    #bpm-label { font-size: 11px; color: #aaa; letter-spacing: 3px; text-transform: uppercase; margin-top: 4px; }
-    #tempo-name { font-size: 13px; color: #888; margin-top: 8px; min-height: 18px; }
+    /* BPM number: was 72px → 96px (bigger speed font) */
+    #bpm-number { font-size: 96px; font-weight: 300; color: #1a1a1a; letter-spacing: -4px; }
+    /* BPM label: was 11px → 14px */
+    #bpm-label { font-size: 14px; color: #aaa; letter-spacing: 3px; text-transform: uppercase; margin-top: 4px; }
+    /* Tempo name: was 13px → 16px */
+    #tempo-name { font-size: 16px; color: #888; margin-top: 8px; min-height: 20px; }
     #bpm-slider { width: 100%; max-width: 300px; accent-color: #1a3a6b; cursor: pointer; }
     .btn-row { display: flex; gap: 10px; align-items: center; }
     .adj-btn {
       width: 44px; height: 44px; border-radius: 50%;
       border: 1px solid #ddd; background: #fff;
-      color: #1a1a1a; font-size: 18px; font-weight: 300;
+      color: #1a1a1a; font-size: 21px; font-weight: 300;
       cursor: pointer; display: flex; align-items: center; justify-content: center;
       touch-action: manipulation; -webkit-tap-highlight-color: transparent;
     }
@@ -46,7 +47,7 @@
     #play-btn {
       width: 76px; height: 76px; border-radius: 50%;
       border: 1.5px solid #1a3a6b; background: #fff;
-      color: #1a3a6b; font-size: 26px;
+      color: #1a3a6b; font-size: 29px;
       cursor: pointer; display: flex; align-items: center; justify-content: center;
       touch-action: manipulation; -webkit-tap-highlight-color: transparent;
       transition: background 0.12s, color 0.12s;
@@ -57,30 +58,34 @@
     .beat-dot { width: 10px; height: 10px; border-radius: 50%; background: #ddd; transition: background 0.05s, transform 0.05s; }
     .beat-dot.accent { background: #1a3a6b; }
     .beat-dot.flash { background: #4a7acc; transform: scale(1.5); }
-    .section-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: #bbb; align-self: flex-start; }
+    /* section-label: was 10px → 13px */
+    .section-label { font-size: 13px; letter-spacing: 2px; text-transform: uppercase; color: #bbb; align-self: flex-start; }
     .beats-control { display: flex; gap: 12px; align-items: center; width: 100%; max-width: 300px; }
-    .beats-control span { font-size: 16px; color: #1a1a1a; flex: 1; text-align: center; }
+    /* beats count: was 16px → 19px */
+    .beats-control span { font-size: 19px; color: #1a1a1a; flex: 1; text-align: center; }
     .sm-btn {
       width: 36px; height: 36px; border-radius: 50%;
       border: 1px solid #ddd; background: #fff;
-      color: #1a1a1a; font-size: 18px;
+      color: #1a1a1a; font-size: 21px;
       cursor: pointer; display: flex; align-items: center; justify-content: center;
       touch-action: manipulation; -webkit-tap-highlight-color: transparent;
     }
     .sm-btn:active { background: #f0f0f0; }
+    /* tap btn: was 12px → 15px */
     #tap-btn {
       padding: 12px 32px; border-radius: 28px;
       border: 1px solid #ddd; background: #f7f7f7;
-      color: #888; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
+      color: #888; font-size: 15px; letter-spacing: 2px; text-transform: uppercase;
       cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
       font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
     }
     #tap-btn:active { background: #efefef; transform: scale(0.97); }
     #subdivide-row { display: flex; gap: 8px; }
+    /* sub-btn: was 13px → 16px */
     .sub-btn {
       padding: 6px 14px; border-radius: 18px;
       border: 1px solid #e0e0e0; background: #fff;
-      color: #aaa; font-size: 13px;
+      color: #aaa; font-size: 16px;
       cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
       font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
     }
@@ -89,9 +94,11 @@
     hr.divider { width: 100%; max-width: 300px; border: none; border-top: 1px solid #f0f0f0; }
     .controls-block { width: 100%; max-width: 300px; display: flex; flex-direction: column; gap: 12px; }
     .volume-row { display: flex; align-items: center; gap: 10px; width: 100%; max-width: 300px; }
-    .vol-icon { font-size: 16px; width: 20px; text-align: center; flex-shrink: 0; }
+    /* vol icon: was 16px → 19px */
+    .vol-icon { font-size: 19px; width: 24px; text-align: center; flex-shrink: 0; }
     #volume-slider { flex: 1; accent-color: #1a3a6b; cursor: pointer; }
-    #volume-pct { font-size: 12px; color: #aaa; width: 36px; text-align: right; flex-shrink: 0; }
+    /* vol pct: was 12px → 15px */
+    #volume-pct { font-size: 15px; color: #aaa; width: 44px; text-align: right; flex-shrink: 0; }
   </style>
 </head>
 <body>
@@ -127,9 +134,10 @@
 
   <div class="beats-row" id="beats-row"></div>
 
+  <!-- Volume: 0–300% -->
   <div class="volume-row">
     <span class="vol-icon">🔊</span>
-    <input type="range" id="volume-slider" min="0" max="100" value="80" step="1">
+    <input type="range" id="volume-slider" min="0" max="300" value="80" step="1">
     <span id="volume-pct">80%</span>
   </div>
 
@@ -177,6 +185,7 @@
   const volIcon=document.querySelector('.vol-icon');
 
   volSlider.addEventListener('input',()=>{
+    // 0–300 slider → 0–3.0 gain multiplier
     volume=+volSlider.value/100;
     volPct.textContent=volSlider.value+'%';
     if(+volSlider.value===0) volIcon.textContent='🔇';
