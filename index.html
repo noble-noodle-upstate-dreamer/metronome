@@ -23,16 +23,12 @@
       display: flex; flex-direction: column; align-items: center;
       padding: 2rem 1.5rem 3rem; min-height: 100vh; gap: 1.5rem;
     }
-    /* h1: was 13px → 16px */
     h1 { font-size: 16px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: #888; margin-top: 0.5rem; }
     #pendulum-area { width: 200px; height: 180px; position: relative; flex-shrink: 0; }
     #pendulum-svg { width: 100%; height: 100%; overflow: visible; }
     #bpm-display { text-align: center; line-height: 1; }
-    /* BPM number: was 72px → 96px (bigger speed font) */
     #bpm-number { font-size: 96px; font-weight: 300; color: #1a1a1a; letter-spacing: -4px; }
-    /* BPM label: was 11px → 14px */
     #bpm-label { font-size: 14px; color: #aaa; letter-spacing: 3px; text-transform: uppercase; margin-top: 4px; }
-    /* Tempo name: was 13px → 16px */
     #tempo-name { font-size: 16px; color: #888; margin-top: 8px; min-height: 20px; }
     #bpm-slider { width: 100%; max-width: 300px; accent-color: #1a3a6b; cursor: pointer; }
     .btn-row { display: flex; gap: 10px; align-items: center; }
@@ -58,10 +54,8 @@
     .beat-dot { width: 10px; height: 10px; border-radius: 50%; background: #ddd; transition: background 0.05s, transform 0.05s; }
     .beat-dot.accent { background: #1a3a6b; }
     .beat-dot.flash { background: #4a7acc; transform: scale(1.5); }
-    /* section-label: was 10px → 13px */
     .section-label { font-size: 13px; letter-spacing: 2px; text-transform: uppercase; color: #bbb; align-self: flex-start; }
     .beats-control { display: flex; gap: 12px; align-items: center; width: 100%; max-width: 300px; }
-    /* beats count: was 16px → 19px */
     .beats-control span { font-size: 19px; color: #1a1a1a; flex: 1; text-align: center; }
     .sm-btn {
       width: 36px; height: 36px; border-radius: 50%;
@@ -71,7 +65,6 @@
       touch-action: manipulation; -webkit-tap-highlight-color: transparent;
     }
     .sm-btn:active { background: #f0f0f0; }
-    /* tap btn: was 12px → 15px */
     #tap-btn {
       padding: 12px 32px; border-radius: 28px;
       border: 1px solid #ddd; background: #f7f7f7;
@@ -81,7 +74,6 @@
     }
     #tap-btn:active { background: #efefef; transform: scale(0.97); }
     #subdivide-row { display: flex; gap: 8px; }
-    /* sub-btn: was 13px → 16px */
     .sub-btn {
       padding: 6px 14px; border-radius: 18px;
       border: 1px solid #e0e0e0; background: #fff;
@@ -94,11 +86,15 @@
     hr.divider { width: 100%; max-width: 300px; border: none; border-top: 1px solid #f0f0f0; }
     .controls-block { width: 100%; max-width: 300px; display: flex; flex-direction: column; gap: 12px; }
     .volume-row { display: flex; align-items: center; gap: 10px; width: 100%; max-width: 300px; }
-    /* vol icon: was 16px → 19px */
     .vol-icon { font-size: 19px; width: 24px; text-align: center; flex-shrink: 0; }
     #volume-slider { flex: 1; accent-color: #1a3a6b; cursor: pointer; }
-    /* vol pct: was 12px → 15px */
     #volume-pct { font-size: 15px; color: #aaa; width: 44px; text-align: right; flex-shrink: 0; }
+    /* Wake lock status indicator */
+    #wakelock-status {
+      font-size: 11px; color: #bbb; letter-spacing: 1px;
+      min-height: 16px; text-align: center;
+    }
+    #wakelock-status.active { color: #4a7acc; }
   </style>
 </head>
 <body>
@@ -133,6 +129,9 @@
   </div>
 
   <div class="beats-row" id="beats-row"></div>
+
+  <!-- Wake lock status -->
+  <div id="wakelock-status"></div>
 
   <!-- Volume: 0–300% -->
   <div class="volume-row">
@@ -170,6 +169,7 @@
   let timerId=null, audioCtx=null;
   let pendulumAngle=0, pendulumDir=1, animId=null, targetAngle=30;
   let tapTimes=[];
+  let wakeLock=null;
 
   const tempos=[[0,''],[20,'Larghissimo'],[40,'Largo'],[60,'Larghetto'],[66,'Adagio'],[76,'Andante'],[108,'Moderato'],[120,'Allegretto'],[156,'Allegro'],[176,'Vivace'],[200,'Presto'],[220,'Prestissimo']];
 
@@ -183,9 +183,46 @@
   const volSlider=document.getElementById('volume-slider');
   const volPct=document.getElementById('volume-pct');
   const volIcon=document.querySelector('.vol-icon');
+  const wakeLockStatus=document.getElementById('wakelock-status');
 
+  // --- Wake Lock ---
+  async function requestWakeLock(){
+    if(!('wakeLock' in navigator)) {
+      wakeLockStatus.textContent='';
+      return;
+    }
+    try {
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLockStatus.textContent='● SCREEN AWAKE';
+      wakeLockStatus.classList.add('active');
+      // If OS releases it (e.g. low battery), update status
+      wakeLock.addEventListener('release', ()=>{
+        wakeLockStatus.textContent='';
+        wakeLockStatus.classList.remove('active');
+      });
+    } catch(e){
+      wakeLockStatus.textContent='';
+    }
+  }
+
+  function releaseWakeLock(){
+    if(wakeLock){
+      wakeLock.release();
+      wakeLock=null;
+    }
+    wakeLockStatus.textContent='';
+    wakeLockStatus.classList.remove('active');
+  }
+
+  // Re-acquire wake lock if page becomes visible again (e.g. tab switch back)
+  document.addEventListener('visibilitychange', async ()=>{
+    if(playing && document.visibilityState==='visible'){
+      await requestWakeLock();
+    }
+  });
+
+  // --- Volume ---
   volSlider.addEventListener('input',()=>{
-    // 0–300 slider → 0–3.0 gain multiplier
     volume=+volSlider.value/100;
     volPct.textContent=volSlider.value+'%';
     if(+volSlider.value===0) volIcon.textContent='🔇';
@@ -270,15 +307,25 @@
     timerId=setTimeout(tick,(60000/bpm)/subdivision);
   }
 
-  function startStop(){
+  async function startStop(){
     if(playing){
-      playing=false; clearTimeout(timerId);
-      playBtn.textContent='▶'; playBtn.classList.remove('playing');
+      // STOP — release wake lock
+      playing=false;
+      clearTimeout(timerId);
+      playBtn.textContent='▶';
+      playBtn.classList.remove('playing');
       stopPendulumAnim();
+      releaseWakeLock();
     } else {
-      playing=true; beat=0; subBeat=0;
-      playBtn.textContent='■'; playBtn.classList.add('playing');
-      pendulumDir=1; startPendulumAnim(); tick();
+      // START — request wake lock
+      playing=true;
+      beat=0; subBeat=0;
+      playBtn.textContent='■';
+      playBtn.classList.add('playing');
+      pendulumDir=1;
+      startPendulumAnim();
+      tick();
+      await requestWakeLock();
     }
   }
 
@@ -287,7 +334,7 @@
   document.getElementById('plus1').addEventListener('click',()=>{ bpm=Math.min(240,bpm+1); updateDisplay(); });
   document.getElementById('minus10').addEventListener('click',()=>{ bpm=Math.max(20,bpm-10); updateDisplay(); });
   document.getElementById('plus10').addEventListener('click',()=>{ bpm=Math.min(240,bpm+10); updateDisplay(); });
-  playBtn.addEventListener('click',startStop);
+  playBtn.addEventListener('click', startStop);
   document.getElementById('beats-down').addEventListener('click',()=>{ beats=Math.max(1,beats-1); beatsLabel.textContent=beats; renderDots(); if(playing) beat=beat%beats; });
   document.getElementById('beats-up').addEventListener('click',()=>{ beats=Math.min(12,beats+1); beatsLabel.textContent=beats; renderDots(); });
   document.querySelectorAll('.sub-btn').forEach(btn=>{
