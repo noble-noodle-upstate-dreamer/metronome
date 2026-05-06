@@ -6,7 +6,11 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Metronome">
-  <meta name="theme-color" content="#ffffff">
+  <meta name="theme-color" content="#1a3a6b">
+
+  <!-- Inline SVG icon as base64 data URI — deep blue with white pendulum -->
+  <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxODAgMTgwIj48cmVjdCB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgcng9IjM4IiBmaWxsPSIjMWEzYTZiIi8+PGxpbmUgeDE9IjkwIiB5MT0iMzAiIHgyPSI5MCIgeTI9IjE1NSIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjYiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxjaXJjbGUgY3g9IjkwIiBjeT0iMzAiIHI9IjgiIGZpbGw9IiNmZmZmZmYiLz48Y2lyY2xlIGN4PSI5MCIgY3k9IjE1NSIgcj0iMTgiIGZpbGw9IiNmZmZmZmYiLz48bGluZSB4MT0iNjAiIHkxPSIzMCIgeDI9IjEyMCIgeTI9IjMwIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PC9zdmc+">
+
   <title>Metronome</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -19,28 +23,17 @@
       overscroll-behavior: none;
     }
     #app {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 2rem 1.5rem 3rem;
-      min-height: 100vh;
-      gap: 1.5rem;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 2rem 1.5rem 3rem; min-height: 100vh; gap: 1.5rem;
     }
-    h1 {
-      font-size: 13px;
-      font-weight: 500;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      color: #888;
-      margin-top: 0.5rem;
-    }
+    h1 { font-size: 13px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: #888; margin-top: 0.5rem; }
     #pendulum-area { width: 200px; height: 180px; position: relative; flex-shrink: 0; }
     #pendulum-svg { width: 100%; height: 100%; overflow: visible; }
     #bpm-display { text-align: center; line-height: 1; }
     #bpm-number { font-size: 72px; font-weight: 300; color: #1a1a1a; letter-spacing: -3px; }
     #bpm-label { font-size: 11px; color: #aaa; letter-spacing: 3px; text-transform: uppercase; margin-top: 4px; }
     #tempo-name { font-size: 13px; color: #888; margin-top: 8px; min-height: 18px; }
-    #bpm-slider { width: 100%; max-width: 300px; accent-color: #1a1a1a; height: 4px; cursor: pointer; }
+    #bpm-slider { width: 100%; max-width: 300px; accent-color: #1a3a6b; cursor: pointer; }
     .btn-row { display: flex; gap: 10px; align-items: center; }
     .adj-btn {
       width: 44px; height: 44px; border-radius: 50%;
@@ -48,32 +41,25 @@
       color: #1a1a1a; font-size: 18px; font-weight: 300;
       cursor: pointer; display: flex; align-items: center; justify-content: center;
       touch-action: manipulation; -webkit-tap-highlight-color: transparent;
-      transition: background 0.1s;
     }
     .adj-btn:active { background: #f0f0f0; transform: scale(0.95); }
     #play-btn {
       width: 76px; height: 76px; border-radius: 50%;
-      border: 1.5px solid #1a1a1a; background: #fff;
-      color: #1a1a1a; font-size: 26px;
+      border: 1.5px solid #1a3a6b; background: #fff;
+      color: #1a3a6b; font-size: 26px;
       cursor: pointer; display: flex; align-items: center; justify-content: center;
       touch-action: manipulation; -webkit-tap-highlight-color: transparent;
       transition: background 0.12s, color 0.12s;
     }
-    #play-btn.playing { background: #1a1a1a; color: #fff; }
+    #play-btn.playing { background: #1a3a6b; color: #fff; }
     #play-btn:active { transform: scale(0.95); }
     .beats-row { display: flex; gap: 10px; align-items: center; }
-    .beat-dot {
-      width: 10px; height: 10px; border-radius: 50%;
-      background: #ddd; transition: background 0.05s, transform 0.05s;
-    }
-    .beat-dot.accent { background: #1a1a1a; }
-    .beat-dot.flash { background: #888; transform: scale(1.5); }
-    .section-label {
-      font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
-      color: #bbb; align-self: flex-start;
-    }
+    .beat-dot { width: 10px; height: 10px; border-radius: 50%; background: #ddd; transition: background 0.05s, transform 0.05s; }
+    .beat-dot.accent { background: #1a3a6b; }
+    .beat-dot.flash { background: #4a7acc; transform: scale(1.5); }
+    .section-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: #bbb; align-self: flex-start; }
     .beats-control { display: flex; gap: 12px; align-items: center; width: 100%; max-width: 300px; }
-    .beats-control span { font-size: 16px; color: #1a1a1a; flex: 1; text-align: center; font-weight: 400; }
+    .beats-control span { font-size: 16px; color: #1a1a1a; flex: 1; text-align: center; }
     .sm-btn {
       width: 36px; height: 36px; border-radius: 50%;
       border: 1px solid #ddd; background: #fff;
@@ -98,10 +84,14 @@
       cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
       font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
     }
-    .sub-btn.active { border-color: #1a1a1a; color: #1a1a1a; font-weight: 500; }
+    .sub-btn.active { border-color: #1a3a6b; color: #1a3a6b; font-weight: 500; }
     .sub-btn:active { opacity: 0.6; }
     hr.divider { width: 100%; max-width: 300px; border: none; border-top: 1px solid #f0f0f0; }
     .controls-block { width: 100%; max-width: 300px; display: flex; flex-direction: column; gap: 12px; }
+    .volume-row { display: flex; align-items: center; gap: 10px; width: 100%; max-width: 300px; }
+    .vol-icon { font-size: 16px; width: 20px; text-align: center; flex-shrink: 0; }
+    #volume-slider { flex: 1; accent-color: #1a3a6b; cursor: pointer; }
+    #volume-pct { font-size: 12px; color: #aaa; width: 36px; text-align: right; flex-shrink: 0; }
   </style>
 </head>
 <body>
@@ -112,10 +102,10 @@
     <svg id="pendulum-svg" viewBox="0 0 200 180">
       <line x1="100" y1="10" x2="100" y2="160" stroke="#eee" stroke-width="1"/>
       <g id="pendulum-arm" style="transform-origin: 100px 10px; transform: rotate(0deg);">
-        <line x1="100" y1="10" x2="100" y2="145" stroke="#bbb" stroke-width="2" stroke-linecap="round"/>
-        <circle cx="100" cy="145" r="11" fill="#1a1a1a"/>
+        <line x1="100" y1="10" x2="100" y2="145" stroke="#1a3a6b" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="100" cy="145" r="11" fill="#1a3a6b"/>
       </g>
-      <circle cx="100" cy="10" r="4" fill="#ddd"/>
+      <circle cx="100" cy="10" r="4" fill="#4a7acc"/>
     </svg>
   </div>
 
@@ -128,25 +118,30 @@
   <input type="range" id="bpm-slider" min="20" max="240" value="120" step="1">
 
   <div class="btn-row">
-    <button class="adj-btn" id="minus10" aria-label="Minus 10">−10</button>
-    <button class="adj-btn" id="minus1" aria-label="Minus 1">−</button>
+    <button class="adj-btn" id="minus10">−10</button>
+    <button class="adj-btn" id="minus1">−</button>
     <button id="play-btn" aria-label="Play/Stop">▶</button>
-    <button class="adj-btn" id="plus1" aria-label="Plus 1">+</button>
-    <button class="adj-btn" id="plus10" aria-label="Plus 10">+10</button>
+    <button class="adj-btn" id="plus1">+</button>
+    <button class="adj-btn" id="plus10">+10</button>
   </div>
 
   <div class="beats-row" id="beats-row"></div>
+
+  <div class="volume-row">
+    <span class="vol-icon">🔊</span>
+    <input type="range" id="volume-slider" min="0" max="100" value="80" step="1">
+    <span id="volume-pct">80%</span>
+  </div>
 
   <hr class="divider">
 
   <div class="controls-block">
     <span class="section-label">Beats per measure</span>
     <div class="beats-control">
-      <button class="sm-btn" id="beats-down" aria-label="Fewer beats">−</button>
-      <span id="beats-label">4</span>
-      <button class="sm-btn" id="beats-up" aria-label="More beats">+</button>
+      <button class="sm-btn" id="beats-down">−</button>
+      <span id="beats-label">1</span>
+      <button class="sm-btn" id="beats-up">+</button>
     </div>
-
     <span class="section-label">Subdivision</span>
     <div id="subdivide-row">
       <button class="sub-btn active" data-sub="1">♩</button>
@@ -162,7 +157,7 @@
 
 <script>
 (function(){
-  let bpm=120, beats=4, subdivision=1;
+  let bpm=120, beats=1, subdivision=1, volume=0.8;
   let playing=false, beat=0, subBeat=0;
   let timerId=null, audioCtx=null;
   let pendulumAngle=0, pendulumDir=1, animId=null, targetAngle=30;
@@ -177,14 +172,20 @@
   const beatsRow=document.getElementById('beats-row');
   const beatsLabel=document.getElementById('beats-label');
   const pendulumArm=document.getElementById('pendulum-arm');
+  const volSlider=document.getElementById('volume-slider');
+  const volPct=document.getElementById('volume-pct');
+  const volIcon=document.querySelector('.vol-icon');
+
+  volSlider.addEventListener('input',()=>{
+    volume=+volSlider.value/100;
+    volPct.textContent=volSlider.value+'%';
+    if(+volSlider.value===0) volIcon.textContent='🔇';
+    else if(+volSlider.value<50) volIcon.textContent='🔈';
+    else volIcon.textContent='🔊';
+  });
 
   function getTempoName(b){ let n=''; for(let i=0;i<tempos.length;i++) if(b>=tempos[i][0]) n=tempos[i][1]; return n; }
-
-  function updateDisplay(){
-    bpmEl.textContent=bpm; sliderEl.value=bpm;
-    tempoEl.textContent=getTempoName(bpm);
-    renderDots();
-  }
+  function updateDisplay(){ bpmEl.textContent=bpm; sliderEl.value=bpm; tempoEl.textContent=getTempoName(bpm); renderDots(); }
 
   function renderDots(){
     beatsRow.innerHTML='';
@@ -197,18 +198,12 @@
   }
 
   function flashDot(b){
-    document.querySelectorAll('.beat-dot').forEach((d,i)=>{
-      d.classList.remove('flash','accent');
-      if(i===0) d.classList.add('accent');
-    });
+    document.querySelectorAll('.beat-dot').forEach((d,i)=>{ d.classList.remove('flash','accent'); if(i===0) d.classList.add('accent'); });
     const el=document.getElementById('dot-'+b);
     if(el){ el.classList.add('flash'); setTimeout(()=>el.classList.remove('flash'),80); }
   }
 
-  function getCtx(){
-    if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-    return audioCtx;
-  }
+  function getCtx(){ if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)(); return audioCtx; }
 
   function click(isAccent, isSub){
     try{
@@ -221,15 +216,15 @@
       const t=ctx.currentTime;
       if(isSub){
         osc.frequency.setValueAtTime(800,t);
-        gain.gain.setValueAtTime(0.06,t);
+        gain.gain.setValueAtTime(0.06*volume,t);
         gain.gain.exponentialRampToValueAtTime(0.0001,t+0.04);
       } else if(isAccent){
         osc.frequency.setValueAtTime(1800,t);
-        gain.gain.setValueAtTime(0.5,t);
+        gain.gain.setValueAtTime(0.5*volume,t);
         gain.gain.exponentialRampToValueAtTime(0.0001,t+0.08);
       } else {
         osc.frequency.setValueAtTime(900,t);
-        gain.gain.setValueAtTime(0.3,t);
+        gain.gain.setValueAtTime(0.3*volume,t);
         gain.gain.exponentialRampToValueAtTime(0.0001,t+0.06);
       }
       osc.start(t); osc.stop(t+0.1);
@@ -296,11 +291,7 @@
   document.getElementById('tap-btn').addEventListener('click',()=>{
     const now=Date.now(); tapTimes.push(now);
     if(tapTimes.length>8) tapTimes.shift();
-    if(tapTimes.length>=2){
-      let sum=0; for(let i=1;i<tapTimes.length;i++) sum+=tapTimes[i]-tapTimes[i-1];
-      bpm=Math.round(Math.min(240,Math.max(20,60000/(sum/(tapTimes.length-1)))));
-      updateDisplay();
-    }
+    if(tapTimes.length>=2){ let sum=0; for(let i=1;i<tapTimes.length;i++) sum+=tapTimes[i]-tapTimes[i-1]; bpm=Math.round(Math.min(240,Math.max(20,60000/(sum/(tapTimes.length-1))))); updateDisplay(); }
     if(now-(tapTimes[0]||0)>3000) tapTimes=[now];
   });
 
